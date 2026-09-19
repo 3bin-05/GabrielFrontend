@@ -1,0 +1,41 @@
+# ─── Dependencies ──────────────────────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ─── Next.js Build Output ──────────────────────────────────────
+.next/
+out/
+build/
+dist/
+
+# ─── Environment Variables (NEVER commit these) ─────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# ─── TypeScript Build Info ──────────────────────────────────────
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ─── Logs ──────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ─── OS / Editor ───────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.suo
+*.user
+.vscode/
+.idea/
+
+# ─── Misc ──────────────────────────────────────────────────────
+*.pem
+.vercel
