@@ -68,7 +68,7 @@ export function ActiveMissionPanel({
       title: `Incident #${incident.incidentNumber}`,
       subtitle: `${incident.victimCount} Casualty • ${incident.severity}`,
       type: "accident",
-      severity: incident.severity,
+      severity: (incident.severity === "MODERATE" ? "MEDIUM" : incident.severity) as "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
       status: incident.status,
     },
     {

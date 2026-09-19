@@ -37,7 +37,9 @@ export function Navbar() {
         <div className="flex items-center gap-6 lg:gap-8">
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-[#141414] font-black text-xl tracking-[0.32em] uppercase group hover:opacity-80 transition-opacity"
+            className={`flex items-center gap-1.5 font-black text-xl tracking-[0.32em] uppercase group hover:opacity-75 transition-opacity ${
+              isHome ? "text-white" : "text-[#141414]"
+            }`}
           >
             <span>G</span>
             <span className="inline-block font-sans font-normal scale-y-110">Λ</span>
@@ -49,42 +51,52 @@ export function Navbar() {
           </Link>
 
           {/* Vertical Separator */}
-          <div className="hidden md:block w-[1px] h-5 bg-neutral-300" />
+          <div className={`hidden md:block w-[1px] h-5 ${isHome ? "bg-white/30" : "bg-neutral-300"}`} />
 
           {/* Nav Links */}
-          <nav className="hidden md:flex items-center gap-7 text-xs font-semibold text-neutral-600">
-            <a href="#about" className="hover:text-black transition-colors">
+          <nav className={`hidden md:flex items-center gap-7 text-xs font-semibold ${
+            isHome ? "text-white/80" : "text-neutral-600"
+          }`}>
+            <a href="#about" className={`transition-colors ${isHome ? "hover:text-white" : "hover:text-black"}`}>
               About
             </a>
-            <a href="#how-it-works" className="hover:text-black transition-colors">
+            <a href="#how-it-works" className={`transition-colors ${isHome ? "hover:text-white" : "hover:text-black"}`}>
               How it works
             </a>
-            <a href="#impact" className="hover:text-black transition-colors">
+            <a href="#impact" className={`transition-colors ${isHome ? "hover:text-white" : "hover:text-black"}`}>
               Impact
             </a>
-            <a href="#contact" className="hover:text-black transition-colors">
+            <a href="#contact" className={`transition-colors ${isHome ? "hover:text-white" : "hover:text-black"}`}>
               Contact
             </a>
           </nav>
         </div>
 
-        {/* Right: Auth / Dashboard CTA Buttons (floating over night sky on right) */}
+        {/* Right: Auth / Dashboard CTA Buttons */}
         <div className="hidden md:flex items-center gap-3">
           {!isLoading && user ? (
             <div className="flex items-center gap-3">
               <Link
                 href={ROLE_REDIRECT_MAP[user.role] || "/"}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/90 backdrop-blur-md shadow-sm hover:bg-white transition-colors text-xs font-semibold text-[#141414]"
+                className={`flex items-center gap-2 px-4 py-2 rounded-full shadow-sm hover:opacity-90 transition-all text-xs font-semibold ${
+                  isHome
+                    ? "bg-white/15 backdrop-blur-sm border border-white/20 text-white hover:bg-white/25"
+                    : "bg-white/90 backdrop-blur-md text-[#141414]"
+                }`}
               >
-                <User className="w-3.5 h-3.5 text-[#141414]" />
+                <User className={`w-3.5 h-3.5 ${isHome ? "text-white" : "text-[#141414]"}`} />
                 <span>{user.name}</span>
-                <span className="text-[10px] uppercase font-bold bg-black text-white px-2 py-0.5 rounded-full">
+                <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-full ${
+                  isHome ? "bg-white text-black" : "bg-black text-white"
+                }`}>
                   {user.role}
                 </span>
               </Link>
               <button
                 onClick={() => logout()}
-                className="text-white hover:text-neutral-200 transition-colors text-xs font-semibold p-2"
+                className={`transition-colors text-xs font-semibold p-2 ${
+                  isHome ? "text-white/80 hover:text-white" : "text-neutral-600 hover:text-black"
+                }`}
                 title="Log Out"
               >
                 <LogOut className="w-4 h-4" />
@@ -94,13 +106,21 @@ export function Navbar() {
             <div className="flex items-center gap-3">
               <Link
                 href="/login"
-                className="px-6 py-2.5 rounded-full bg-white hover:bg-neutral-100 text-xs font-bold text-[#111111] shadow-sm transition-all border border-transparent"
+                className={`px-6 py-2.5 rounded-full text-xs font-bold shadow-sm transition-all ${
+                  isHome
+                    ? "bg-white/15 backdrop-blur-sm border border-white/30 text-white hover:bg-white/25"
+                    : "bg-white hover:bg-neutral-100 text-[#111111] border border-transparent"
+                }`}
               >
                 Log In
               </Link>
               <Link
                 href="/register"
-                className="px-6 py-2.5 rounded-full bg-[#111111] hover:bg-[#222222] border border-white/20 text-xs font-bold text-white shadow-sm transition-all"
+                className={`px-6 py-2.5 rounded-full text-xs font-bold shadow-sm transition-all ${
+                  isHome
+                    ? "bg-white text-[#111111] hover:bg-neutral-100"
+                    : "bg-[#111111] hover:bg-[#222222] border border-white/20 text-white"
+                }`}
               >
                 Create Account
               </Link>
@@ -112,13 +132,15 @@ export function Navbar() {
         <div className="flex md:hidden items-center gap-2">
           <Link
             href="/emergency-report"
-            className="text-[11px] font-bold bg-black text-white px-3.5 py-1.5 rounded-full"
+            className="text-[11px] font-bold bg-white text-black px-3.5 py-1.5 rounded-full"
           >
             SOS
           </Link>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-full hover:bg-white/80 text-black focus:outline-none"
+            className={`p-2 rounded-full focus:outline-none transition-colors ${
+              isHome ? "text-white hover:bg-white/15" : "text-black hover:bg-neutral-100"
+            }`}
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}

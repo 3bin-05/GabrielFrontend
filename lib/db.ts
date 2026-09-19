@@ -1113,7 +1113,7 @@ export async function createHospital(data: {
     latitude: data.latitude || 9.9312,
     longitude: data.longitude || 76.2673,
     phone: data.phone || "0484-2800000",
-    status: "OPERATIONAL",
+    status: "AVAILABLE",
     availableBeds: data.availableBeds || 12,
     emergencyDepartmentStatus: "READY",
   };

@@ -93,10 +93,7 @@ export default function AdminDashboardPage() {
     setAmbulances((prev) =>
       prev.map((a) =>
         a.id === ambulanceId
-          ? {
-              ...a,
-              location: { ...a.location, latitude, longitude, updatedAt: new Date().toISOString() },
-            }
+          ? { ...a, latitude, longitude, updatedAt: new Date().toISOString() }
           : a
       )
     );
@@ -128,6 +125,15 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // Helper: map IncidentSeverity ('MODERATE') to MapPoint severity ('MEDIUM')
+  const toMapSeverity = (s: string): "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | undefined => {
+    if (s === "CRITICAL") return "CRITICAL";
+    if (s === "HIGH") return "HIGH";
+    if (s === "MODERATE" || s === "MEDIUM") return "MEDIUM";
+    if (s === "LOW") return "LOW";
+    return undefined;
+  };
+
   // Compile system-wide map markers
   const systemMapMarkers: MapPoint[] = [];
 
@@ -142,7 +148,7 @@ export default function AdminDashboardPage() {
         title: `Incident #${inc.incidentNumber}`,
         subtitle: `${inc.victimCount} Casualty • ${inc.severity}`,
         type: "accident",
-        severity: inc.severity,
+        severity: toMapSeverity(inc.severity),
         status: inc.status,
       });
     });
@@ -151,9 +157,9 @@ export default function AdminDashboardPage() {
   ambulances.forEach((amb) => {
     systemMapMarkers.push({
       id: `amb-${amb.id}`,
-      latitude: amb.location.latitude,
-      longitude: amb.location.longitude,
-      title: `${amb.vehicleNumber} (${amb.callSign})`,
+      latitude: amb.latitude,
+      longitude: amb.longitude,
+      title: amb.vehicleNumber,
       subtitle: `Driver: ${amb.driverName}`,
       type: "ambulance",
       status: amb.status,
@@ -165,10 +171,10 @@ export default function AdminDashboardPage() {
   hospitals.forEach((hosp) => {
     systemMapMarkers.push({
       id: `hosp-${hosp.id}`,
-      latitude: hosp.location.latitude,
-      longitude: hosp.location.longitude,
+      latitude: hosp.latitude,
+      longitude: hosp.longitude,
       title: hosp.name,
-      subtitle: `${hosp.availableBeds}/${hosp.totalBeds} Beds • ${hosp.emergencyDepartmentStatus}`,
+      subtitle: `${hosp.availableBeds} Beds • ${hosp.emergencyDepartmentStatus}`,
       type: "hospital",
       status: hosp.emergencyDepartmentStatus,
     });
