@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import { Pool } from "pg";
 import { User, UserRole } from "@/types/auth";
 import { Incident, IncidentSeverity, IncidentStatus } from "@/types/incident";
-import { Ambulance, AmbulanceStatus } from "@/types/ambulance";
+import { Ambulance, AmbulanceLevel, AmbulanceStatus } from "@/types/ambulance";
 import { Hospital, HospitalReadinessState, HospitalStatus } from "@/types/hospital";
 
 export interface DbUser extends User {
@@ -98,6 +98,12 @@ export async function initializeDatabase(): Promise<void> {
           driver_name VARCHAR(255) NOT NULL,
           driver_phone VARCHAR(50) NOT NULL,
           status VARCHAR(50) NOT NULL DEFAULT 'AVAILABLE',
+          type VARCHAR(50) DEFAULT 'TYPE_C',
+          equipment_level VARCHAR(50),
+          call_sign VARCHAR(50),
+          base_station VARCHAR(255),
+          vehicle_model VARCHAR(100),
+          equipment_list TEXT[],
           current_incident_id VARCHAR(100),
           current_hospital_id VARCHAR(100),
           latitude DOUBLE PRECISION NOT NULL,
@@ -123,6 +129,12 @@ export async function initializeDatabase(): Promise<void> {
 
         -- Safe column migrations for existing instances
         ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS handled_severities TEXT[] DEFAULT '{"LOW","MODERATE","HIGH","CRITICAL"}';
+        ALTER TABLE ambulances ADD COLUMN IF NOT EXISTS type VARCHAR(50) DEFAULT 'TYPE_C';
+        ALTER TABLE ambulances ADD COLUMN IF NOT EXISTS equipment_level VARCHAR(50);
+        ALTER TABLE ambulances ADD COLUMN IF NOT EXISTS call_sign VARCHAR(50);
+        ALTER TABLE ambulances ADD COLUMN IF NOT EXISTS base_station VARCHAR(255);
+        ALTER TABLE ambulances ADD COLUMN IF NOT EXISTS vehicle_model VARCHAR(100);
+        ALTER TABLE ambulances ADD COLUMN IF NOT EXISTS equipment_list TEXT[];
       `);
 
       isPgConnected = true;
@@ -239,6 +251,18 @@ export async function initializeDatabase(): Promise<void> {
           driverName: "John Miller (Driver)",
           driverPhone: "+15550000002",
           status: "AVAILABLE",
+          type: "TYPE_C" as AmbulanceLevel,
+          callSign: "MEDIC-01",
+          baseStation: "Fort Kochi Emergency Post",
+          vehicleModel: "Force Traveller BLS",
+          equipmentList: [
+            "AED with Live ECG Rhythm Monitoring",
+            "Multi-Size Bag-Valve-Mask (BVM) Resuscitators",
+            "Electric & Manual Airway Suction Unit",
+            "Full Spinal Immobilization Board & Scoop Stretcher",
+            "IV Starter Packs & Fracture Splinting Kit",
+            "High-Flow Oxygen Delivery System",
+          ],
           latitude: 8.9150,
           longitude: 76.6330,
           heading: 90,
@@ -251,6 +275,18 @@ export async function initializeDatabase(): Promise<void> {
           driverName: "Sarah Jenkins (Driver)",
           driverPhone: "+15550000005",
           status: "AVAILABLE",
+          type: "TYPE_D" as AmbulanceLevel,
+          callSign: "TRAUMA-02",
+          baseStation: "City Central Trauma Hub",
+          vehicleModel: "Tata Winger Mobile ICU",
+          equipmentList: [
+            "Transport Mechanical Ventilator & Capnography (EtCO2)",
+            "Multi-Parameter Defibrillator / 12-Lead ECG / Pacing",
+            "Syringe & Volumetric Infusion Pumps",
+            "Video Laryngoscope & Advanced Intubation Kit",
+            "Emergency Resuscitation Pharmacology & Cold-Storage",
+            "Central Oxygen & Dual-Line Suction",
+          ],
           latitude: 8.9240,
           longitude: 76.6450,
           heading: 180,
@@ -262,8 +298,11 @@ export async function initializeDatabase(): Promise<void> {
         const existingAmb = await pg.query("SELECT id FROM ambulances WHERE id = $1", [amb.id]);
         if (existingAmb.rows.length === 0) {
           await pg.query(
-            `INSERT INTO ambulances (id, vehicle_number, driver_id, driver_name, driver_phone, status, latitude, longitude, heading, speed)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            `INSERT INTO ambulances (
+              id, vehicle_number, driver_id, driver_name, driver_phone, status,
+              type, equipment_level, call_sign, base_station, vehicle_model, equipment_list,
+              latitude, longitude, heading, speed
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)`,
             [
               amb.id,
               amb.vehicleNumber,
@@ -271,6 +310,12 @@ export async function initializeDatabase(): Promise<void> {
               amb.driverName,
               amb.driverPhone,
               amb.status,
+              amb.type,
+              amb.type,
+              amb.callSign,
+              amb.baseStation,
+              amb.vehicleModel,
+              amb.equipmentList,
               amb.latitude,
               amb.longitude,
               amb.heading,
@@ -354,9 +399,49 @@ export async function initializeDatabase(): Promise<void> {
     driverName: "John Miller (Driver)",
     driverPhone: "+15550000002",
     status: "AVAILABLE",
+    type: "TYPE_C",
+    equipmentLevel: "TYPE_C",
+    callSign: "MEDIC-01",
+    baseStation: "Fort Kochi Emergency Post",
+    vehicleModel: "Force Traveller BLS",
+    equipmentList: [
+      "AED with Live ECG Rhythm Monitoring",
+      "Multi-Size Bag-Valve-Mask (BVM) Resuscitators",
+      "Electric & Manual Airway Suction Unit",
+      "Full Spinal Immobilization Board & Scoop Stretcher",
+      "IV Starter Packs & Fracture Splinting Kit",
+      "High-Flow Oxygen Delivery System",
+    ],
     latitude: 8.9150,
     longitude: 76.6330,
     heading: 90,
+    speed: 0,
+    updatedAt: new Date().toISOString(),
+  });
+
+  globalStore.__aimless_ambulances?.set("amb_unit_002", {
+    id: "amb_unit_002",
+    vehicleNumber: "Unit A-02 (Heavy Trauma)",
+    driverId: "usr_amb_002",
+    driverName: "Sarah Jenkins (Driver)",
+    driverPhone: "+15550000005",
+    status: "AVAILABLE",
+    type: "TYPE_D",
+    equipmentLevel: "TYPE_D",
+    callSign: "TRAUMA-02",
+    baseStation: "City Central Trauma Hub",
+    vehicleModel: "Tata Winger Mobile ICU",
+    equipmentList: [
+      "Transport Mechanical Ventilator & Capnography (EtCO2)",
+      "Multi-Parameter Defibrillator / 12-Lead ECG / Pacing",
+      "Syringe & Volumetric Infusion Pumps",
+      "Video Laryngoscope & Advanced Intubation Kit",
+      "Emergency Resuscitation Pharmacology & Cold-Storage",
+      "Central Oxygen & Dual-Line Suction",
+    ],
+    latitude: 8.9240,
+    longitude: 76.6450,
+    heading: 180,
     speed: 0,
     updatedAt: new Date().toISOString(),
   });
@@ -371,8 +456,36 @@ export async function initializeDatabase(): Promise<void> {
     phone: "+1-555-911-0100",
     status: "AVAILABLE",
     availableBeds: 14,
-    emergencyDepartmentStatus: "IDLE",
+    emergencyDepartmentStatus: "READY",
     handledSeverities: ["LOW", "MODERATE", "HIGH", "CRITICAL"],
+  });
+
+  globalStore.__aimless_hospitals?.set("hosp_002", {
+    id: "hosp_002",
+    name: "Metro Memorial Trauma Hospital",
+    code: "MMTH-02",
+    address: "450 Health Parkway, North District",
+    latitude: 8.9321,
+    longitude: 76.6410,
+    phone: "+1-555-911-0200",
+    status: "AVAILABLE",
+    availableBeds: 8,
+    emergencyDepartmentStatus: "READY",
+    handledSeverities: ["MODERATE", "HIGH", "CRITICAL"],
+  });
+
+  globalStore.__aimless_hospitals?.set("hosp_003", {
+    id: "hosp_003",
+    name: "St. Jude Critical Care Pavilion",
+    code: "SJCC-03",
+    address: "780 Samaritan Ave, West Sector",
+    latitude: 8.9054,
+    longitude: 76.6190,
+    phone: "+1-555-911-0300",
+    status: "AVAILABLE",
+    availableBeds: 5,
+    emergencyDepartmentStatus: "READY",
+    handledSeverities: ["HIGH", "CRITICAL"],
   });
 
   globalStore.__aimless_initialized = true;
@@ -669,7 +782,7 @@ export async function getIncidentById(id: string): Promise<Incident | null> {
         const r = res.rows[0];
         return {
           id: r.id,
-          incidentNumber: r.incident_number,
+          incidentNumber: r.incident_number || `ER-${r.id.substring(0, 6).toUpperCase()}`,
           reporterId: r.reporter_id || undefined,
           reporterPhone: r.reporter_phone || undefined,
           location: {
@@ -678,14 +791,14 @@ export async function getIncidentById(id: string): Promise<Incident | null> {
             accuracy: r.accuracy || undefined,
             address: r.address || undefined,
           },
-          severity: r.severity as IncidentSeverity,
-          victimCount: r.victim_count,
+          severity: ((r.severity ? r.severity.toUpperCase() : "MODERATE") as IncidentSeverity),
+          victimCount: r.victim_count || r.patient_count || 1,
           description: r.description || undefined,
-          status: r.status as IncidentStatus,
+          status: ((r.status ? r.status.toUpperCase() : "REPORTED") as IncidentStatus),
           assignedAmbulanceId: r.assigned_ambulance_id || undefined,
           targetHospitalId: r.target_hospital_id || undefined,
-          createdAt: new Date(r.created_at).toISOString(),
-          updatedAt: new Date(r.updated_at).toISOString(),
+          createdAt: new Date(r.created_at || Date.now()).toISOString(),
+          updatedAt: new Date(r.updated_at || Date.now()).toISOString(),
         };
       }
       return null;
@@ -734,7 +847,7 @@ export async function getIncidents(options?: {
       const res = await pg.query(query, params);
       return res.rows.map((r) => ({
         id: r.id,
-        incidentNumber: r.incident_number,
+        incidentNumber: r.incident_number || `ER-${r.id.substring(0, 6).toUpperCase()}`,
         reporterId: r.reporter_id || undefined,
         reporterPhone: r.reporter_phone || undefined,
         location: {
@@ -743,14 +856,14 @@ export async function getIncidents(options?: {
           accuracy: r.accuracy || undefined,
           address: r.address || undefined,
         },
-        severity: r.severity as IncidentSeverity,
-        victimCount: r.victim_count,
+        severity: ((r.severity ? r.severity.toUpperCase() : "MODERATE") as IncidentSeverity),
+        victimCount: r.victim_count || 1,
         description: r.description || undefined,
-        status: r.status as IncidentStatus,
+        status: ((r.status ? r.status.toUpperCase() : "REPORTED") as IncidentStatus),
         assignedAmbulanceId: r.assigned_ambulance_id || undefined,
         targetHospitalId: r.target_hospital_id || undefined,
-        createdAt: new Date(r.created_at).toISOString(),
-        updatedAt: new Date(r.updated_at).toISOString(),
+        createdAt: new Date(r.created_at || Date.now()).toISOString(),
+        updatedAt: new Date(r.updated_at || Date.now()).toISOString(),
       }));
     } catch (err) {
       console.error("[Database] PostgreSQL error fetching incidents:", err);
@@ -840,6 +953,7 @@ export async function getAmbulances(): Promise<Ambulance[]> {
     try {
       const res = await pg.query(
         `SELECT id, vehicle_number, driver_id, driver_name, driver_phone, status,
+                type, equipment_level, call_sign, base_station, vehicle_model, equipment_list,
                 current_incident_id, current_hospital_id, latitude, longitude, heading, speed, updated_at
          FROM ambulances`
       );
@@ -850,6 +964,12 @@ export async function getAmbulances(): Promise<Ambulance[]> {
         driverName: r.driver_name,
         driverPhone: r.driver_phone,
         status: r.status as AmbulanceStatus,
+        type: (r.type as AmbulanceLevel) || undefined,
+        equipmentLevel: r.equipment_level || undefined,
+        callSign: r.call_sign || undefined,
+        baseStation: r.base_station || undefined,
+        vehicleModel: r.vehicle_model || undefined,
+        equipmentList: r.equipment_list || undefined,
         currentIncidentId: r.current_incident_id || undefined,
         currentHospitalId: r.current_hospital_id || undefined,
         latitude: r.latitude,
@@ -864,6 +984,58 @@ export async function getAmbulances(): Promise<Ambulance[]> {
   }
 
   return Array.from(globalStore.__aimless_ambulances?.values() || []);
+}
+
+export async function getAmbulanceById(id: string): Promise<Ambulance | null> {
+  await initializeDatabase();
+
+  const pg = getPool();
+  if (pg && isPgConnected) {
+    try {
+      const res = await pg.query(
+        `SELECT id, vehicle_number, driver_id, driver_name, driver_phone, status,
+                type, equipment_level, call_sign, base_station, vehicle_model, equipment_list,
+                current_incident_id, current_hospital_id, latitude, longitude, heading, speed, updated_at
+         FROM ambulances WHERE id = $1 OR vehicle_number = $1`,
+        [id]
+      );
+      if (res.rows.length > 0) {
+        const r = res.rows[0];
+        return {
+          id: r.id,
+          vehicleNumber: r.vehicle_number,
+          driverId: r.driver_id,
+          driverName: r.driver_name,
+          driverPhone: r.driver_phone,
+          status: r.status as AmbulanceStatus,
+          type: (r.type as AmbulanceLevel) || undefined,
+          equipmentLevel: r.equipment_level || undefined,
+          callSign: r.call_sign || undefined,
+          baseStation: r.base_station || undefined,
+          vehicleModel: r.vehicle_model || undefined,
+          equipmentList: r.equipment_list || undefined,
+          currentIncidentId: r.current_incident_id || undefined,
+          currentHospitalId: r.current_hospital_id || undefined,
+          latitude: r.latitude,
+          longitude: r.longitude,
+          heading: r.heading || undefined,
+          speed: r.speed || undefined,
+          updatedAt: new Date(r.updated_at).toISOString(),
+        };
+      }
+      return null;
+    } catch (err) {
+      console.error("[Database] PostgreSQL error fetching ambulance by id:", err);
+    }
+  }
+
+  return (
+    globalStore.__aimless_ambulances?.get(id) ||
+    Array.from(globalStore.__aimless_ambulances?.values() || []).find(
+      (a) => a.vehicleNumber === id
+    ) ||
+    null
+  );
 }
 
 export async function updateAmbulance(
@@ -990,6 +1162,53 @@ export async function getHospitals(): Promise<Hospital[]> {
   return Array.from(globalStore.__aimless_hospitals?.values() || []);
 }
 
+export async function getHospitalById(id: string): Promise<Hospital | null> {
+  await initializeDatabase();
+
+  const pg = getPool();
+  if (pg && isPgConnected) {
+    try {
+      const res = await pg.query(
+        `SELECT id, name, code, address, latitude, longitude, phone, status, available_beds, emergency_status, handled_severities
+         FROM hospitals WHERE id = $1 OR code = $1`,
+        [id]
+      );
+      if (res.rows.length > 0) {
+        const r = res.rows[0];
+        return {
+          id: r.id,
+          name: r.name,
+          code: r.code,
+          address: r.address,
+          latitude: r.latitude,
+          longitude: r.longitude,
+          phone: r.phone,
+          status: r.status,
+          availableBeds: r.available_beds,
+          emergencyDepartmentStatus: r.emergency_status,
+          handledSeverities: (r.handled_severities as IncidentSeverity[]) || [
+            "LOW",
+            "MODERATE",
+            "HIGH",
+            "CRITICAL",
+          ],
+        };
+      }
+      return null;
+    } catch (err) {
+      console.error("[Database] PostgreSQL error fetching hospital by id:", err);
+    }
+  }
+
+  return (
+    globalStore.__aimless_hospitals?.get(id) ||
+    Array.from(globalStore.__aimless_hospitals?.values() || []).find(
+      (h) => h.code === id
+    ) ||
+    null
+  );
+}
+
 export async function updateHospital(
   id: string,
   updates: {
@@ -1073,6 +1292,12 @@ export async function createAmbulance(data: {
   driverId: string;
   driverName: string;
   driverPhone: string;
+  type?: AmbulanceLevel;
+  equipmentLevel?: string;
+  equipmentList?: string[];
+  callSign?: string;
+  baseStation?: string;
+  vehicleModel?: string;
   latitude?: number;
   longitude?: number;
 }): Promise<Ambulance> {
@@ -1087,6 +1312,12 @@ export async function createAmbulance(data: {
     driverName: data.driverName,
     driverPhone: data.driverPhone,
     status: "AVAILABLE",
+    type: data.type || "TYPE_C",
+    equipmentLevel: data.equipmentLevel || (data.type ? data.type : "TYPE_C"),
+    equipmentList: data.equipmentList || [],
+    callSign: data.callSign,
+    baseStation: data.baseStation,
+    vehicleModel: data.vehicleModel,
     latitude: data.latitude || 9.9312,
     longitude: data.longitude || 76.2673,
     updatedAt: now,
@@ -1096,8 +1327,11 @@ export async function createAmbulance(data: {
   if (pg && isPgConnected) {
     try {
       await pg.query(
-        `INSERT INTO ambulances (id, vehicle_number, driver_id, driver_name, driver_phone, status, latitude, longitude, updated_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        `INSERT INTO ambulances (
+          id, vehicle_number, driver_id, driver_name, driver_phone, status,
+          type, equipment_level, call_sign, base_station, vehicle_model, equipment_list,
+          latitude, longitude, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)`,
         [
           id,
           ambulance.vehicleNumber,
@@ -1105,6 +1339,12 @@ export async function createAmbulance(data: {
           ambulance.driverName,
           ambulance.driverPhone,
           ambulance.status,
+          ambulance.type || "TYPE_C",
+          ambulance.equipmentLevel || "TYPE_C",
+          ambulance.callSign || null,
+          ambulance.baseStation || null,
+          ambulance.vehicleModel || null,
+          ambulance.equipmentList || null,
           ambulance.latitude,
           ambulance.longitude,
           now,

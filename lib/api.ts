@@ -123,6 +123,31 @@ class ApiClient {
     );
   }
 
+  async getIncidentRecommendations(id: string): Promise<{
+    incident: Incident;
+    matchedAmbulance: any;
+    candidateAmbulances: any[];
+    recommendedHospital: any;
+    alternativeHospitals: any[];
+    filteredOutHospitals: any[];
+    summary: string;
+    autoCommitted: boolean;
+  }> {
+    return this.request(`/api/incidents/${id}/recommendations`, {
+      method: "GET",
+    });
+  }
+
+  async assignIncident(
+    id: string,
+    payload?: { forceAmbulanceId?: string; forceHospitalId?: string }
+  ): Promise<any> {
+    return this.request(`/api/incidents/${id}/assign`, {
+      method: "POST",
+      body: payload ? JSON.stringify(payload) : undefined,
+    });
+  }
+
   // Hospitals
   async getHospitals(): Promise<Hospital[]> {
     const res = await this.request<{ hospitals: Hospital[] }>("/api/hospitals", {

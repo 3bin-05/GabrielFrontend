@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       reporterPhone: currentUser?.phone || (typeof phone === "string" ? phone.trim() : undefined),
     });
 
-    // Broadcast real-time events to all connected clients (Ambulance, Hospital, Admin, Citizen)
+    // Broadcast initial emergency alert
     broadcastEvent("incident:created", { incident });
     broadcastEvent("notification:new", {
       id: `notif_${Date.now()}`,
@@ -65,10 +65,22 @@ export async function POST(request: Request) {
       timestamp: incident.createdAt,
     });
 
+    // Automatically trigger the Assignment Engine to match optimal available ambulance & recommend trauma center
+    let finalIncident = incident;
+    try {
+      const { autoAssignEmergency } = await import("@/lib/assignment-engine");
+      const assignment = await autoAssignEmergency(incident.id);
+      if (assignment.incident) {
+        finalIncident = assignment.incident;
+      }
+    } catch (assignErr) {
+      console.warn("[Assignment Engine Notice]:", assignErr);
+    }
+
     return NextResponse.json(
       {
-        incident,
-        message: "Emergency reported successfully. Response units notified.",
+        incident: finalIncident,
+        message: "Emergency reported and processed by assignment engine. Response units notified.",
       },
       { status: 201 }
     );

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getIncidentById, updateIncident } from "@/lib/db";
+import { getIncidentById, updateIncident, updateAmbulance } from "@/lib/db";
 import { broadcastEvent } from "@/lib/events";
 
 export async function GET(
@@ -64,6 +64,17 @@ export async function PATCH(
         incidentId: updated.id,
         hospitalId: updated.targetHospitalId || "hosp_001",
         incident: updated,
+      });
+    }
+
+    if (status === "CLOSED" && updated.assignedAmbulanceId) {
+      await updateAmbulance(updated.assignedAmbulanceId, {
+        status: "AVAILABLE",
+        currentIncidentId: null,
+      });
+      broadcastEvent("ambulance:status_changed", {
+        ambulanceId: updated.assignedAmbulanceId,
+        status: "AVAILABLE",
       });
     }
 

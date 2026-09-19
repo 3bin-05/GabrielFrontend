@@ -285,6 +285,7 @@ export function ActiveMissionPanel({
         isOpen={isHospitalModalOpen}
         onClose={() => setIsHospitalModalOpen(false)}
         onSelectHospital={handleSelectHospital}
+        incident={incident}
         isSubmitting={isUpdating}
       />
     </div>

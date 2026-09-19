@@ -88,13 +88,21 @@ export default function AmbulanceDashboardPage() {
     (i) =>
       (i.assignedAmbulanceId === ambulance.id ||
         i.assignedAmbulanceId === ambulance.vehicleNumber ||
+        (ambulance.callSign && i.assignedAmbulanceId === ambulance.callSign) ||
         i.assignedAmbulanceId === "Unit A-01 (Rapid Medic)") &&
       i.status !== "CLOSED"
   );
 
-  // Find incoming emergency (an incident waiting in REPORTED or DISPATCHING state)
+  // Find incoming emergency (an incident waiting in REPORTED, DISPATCHING, or AMBULANCE_ASSIGNED state for this unit)
   const incomingEmergency = incidents.find(
-    (i) => !activeMission && (i.status === "REPORTED" || i.status === "DISPATCHING")
+    (i) =>
+      !activeMission &&
+      (i.status === "REPORTED" ||
+        i.status === "DISPATCHING" ||
+        ((i.status === "AMBULANCE_ASSIGNED" || i.status === "AMBULANCE_EN_ROUTE") &&
+          (i.assignedAmbulanceId === ambulance.id ||
+            i.assignedAmbulanceId === ambulance.vehicleNumber ||
+            (ambulance.callSign && i.assignedAmbulanceId === ambulance.callSign))))
   );
 
   // Driver changes ambulance availability status

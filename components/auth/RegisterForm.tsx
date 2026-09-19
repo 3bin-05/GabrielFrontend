@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 import { UserRole } from "@/types/auth";
 import { IncidentSeverity } from "@/types/incident";
+import { AmbulanceLevel, AMBULANCE_LEVEL_CONFIGS } from "@/types/ambulance";
 import { validateEmail, validatePhone, validatePassword } from "@/lib/validation";
 import {
   User,
@@ -27,6 +28,12 @@ import {
   Activity,
   HeartPulse,
   AlertTriangle,
+  Zap,
+  Stethoscope,
+  Sparkles,
+  Radio,
+  Layers,
+  Info,
 } from "lucide-react";
 
 export const SEVERITY_CAPABILITY_OPTIONS: Array<{
@@ -91,9 +98,53 @@ export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
 
   // Ambulance Specific Fields
+  const [ambulanceType, setAmbulanceType] = useState<AmbulanceLevel>("TYPE_C");
   const [vehicleNumber, setVehicleNumber] = useState("");
   const [callSign, setCallSign] = useState("");
   const [baseStation, setBaseStation] = useState("");
+  const [vehicleModel, setVehicleModel] = useState("");
+  const [equipmentList, setEquipmentList] = useState<string[]>(
+    AMBULANCE_LEVEL_CONFIGS.TYPE_C.defaultEquipment
+  );
+  const [ambLatitude, setAmbLatitude] = useState<string>("9.9312");
+  const [ambLongitude, setAmbLongitude] = useState<string>("76.2673");
+  const [detectingAmbCoords, setDetectingAmbCoords] = useState(false);
+
+  const handleSelectAmbulanceLevel = (lvl: AmbulanceLevel) => {
+    setAmbulanceType(lvl);
+    setEquipmentList(AMBULANCE_LEVEL_CONFIGS[lvl].defaultEquipment);
+  };
+
+  const toggleEquipmentItem = (item: string) => {
+    setEquipmentList((prev) =>
+      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item]
+    );
+  };
+
+  const handleSelectAllEquipment = () => {
+    const defaultList = AMBULANCE_LEVEL_CONFIGS[ambulanceType].defaultEquipment;
+    if (equipmentList.length === defaultList.length) {
+      setEquipmentList([defaultList[0]]);
+    } else {
+      setEquipmentList(defaultList);
+    }
+  };
+
+  const handleDetectAmbCoords = () => {
+    if ("geolocation" in navigator) {
+      setDetectingAmbCoords(true);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setAmbLatitude(pos.coords.latitude.toFixed(4));
+          setAmbLongitude(pos.coords.longitude.toFixed(4));
+          setDetectingAmbCoords(false);
+        },
+        () => {
+          setDetectingAmbCoords(false);
+        }
+      );
+    }
+  };
 
   // Hospital Specific Fields
   const [hospitalName, setHospitalName] = useState("");
@@ -132,7 +183,7 @@ export function RegisterForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [detectingCoords, setDetectingCoords] = useState(false);
 
-  // Geolocation auto-detector
+  // Geolocation auto-detector for Hospital
   const handleDetectCoords = () => {
     if ("geolocation" in navigator) {
       setDetectingCoords(true);
@@ -219,16 +270,30 @@ export function RegisterForm() {
         phone: phone.trim(),
         password,
         role,
-        vehicleNumber: vehicleNumber.trim(),
-        callSign: callSign.trim() || undefined,
-        baseStation: baseStation.trim() || undefined,
-        hospitalName: hospitalName.trim() || undefined,
-        hospitalRegistrationNumber: hospitalRegistrationNumber.trim() || undefined,
-        address: address.trim() || undefined,
-        pincode: pincode.trim() || undefined,
-        latitude: latitude ? parseFloat(latitude) : undefined,
-        longitude: longitude ? parseFloat(longitude) : undefined,
-        totalBeds: totalBeds ? parseInt(totalBeds, 10) : undefined,
+        vehicleNumber: role === "AMBULANCE" ? vehicleNumber.trim() : undefined,
+        ambulanceType: role === "AMBULANCE" ? ambulanceType : undefined,
+        callSign: role === "AMBULANCE" ? callSign.trim() || undefined : undefined,
+        baseStation: role === "AMBULANCE" ? baseStation.trim() || undefined : undefined,
+        vehicleModel: role === "AMBULANCE" ? vehicleModel.trim() || undefined : undefined,
+        equipmentLevel: role === "AMBULANCE" ? ambulanceType : undefined,
+        equipmentList: role === "AMBULANCE" ? equipmentList : undefined,
+        hospitalName: role === "HOSPITAL" ? hospitalName.trim() || undefined : undefined,
+        hospitalRegistrationNumber: role === "HOSPITAL" ? hospitalRegistrationNumber.trim() || undefined : undefined,
+        address: role === "HOSPITAL" ? address.trim() || undefined : undefined,
+        pincode: role === "HOSPITAL" ? pincode.trim() || undefined : undefined,
+        latitude:
+          role === "HOSPITAL"
+            ? latitude ? parseFloat(latitude) : undefined
+            : role === "AMBULANCE"
+            ? ambLatitude ? parseFloat(ambLatitude) : undefined
+            : undefined,
+        longitude:
+          role === "HOSPITAL"
+            ? longitude ? parseFloat(longitude) : undefined
+            : role === "AMBULANCE"
+            ? ambLongitude ? parseFloat(ambLongitude) : undefined
+            : undefined,
+        totalBeds: role === "HOSPITAL" && totalBeds ? parseInt(totalBeds, 10) : undefined,
         handledSeverities: role === "HOSPITAL" ? handledSeverities : undefined,
       });
     } catch (err: unknown) {
@@ -241,6 +306,8 @@ export function RegisterForm() {
       setIsSubmitting(false);
     }
   };
+
+  const selectedAmbulanceConfig = AMBULANCE_LEVEL_CONFIGS[ambulanceType];
 
   return (
     <div className="w-full">
@@ -314,48 +381,194 @@ export function RegisterForm() {
 
         {/* ── AMBULANCE SPECIFIC DETAILS ── */}
         {role === "AMBULANCE" && (
-          <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200/80 flex flex-col gap-3 animate-fade-in">
-            <div className="text-[11px] font-bold text-black uppercase tracking-wider flex items-center gap-1.5">
-              <Truck className="w-3.5 h-3.5" />
-              <span>Ambulance Unit Details</span>
-            </div>
-
-            {/* Vehicle Registration Number */}
-            <div>
-              <label className="block text-xs font-semibold text-[#141414] mb-1">
-                Vehicle Registration Number *
-              </label>
-              <div
-                className={`relative flex items-center bg-white rounded-xl px-3.5 py-2.5 border ${
-                  errors.vehicleNumber ? "border-red-400 bg-red-50/20" : "border-neutral-200 focus-within:border-black"
-                }`}
-              >
-                <Truck className="w-4 h-4 text-neutral-400 mr-2.5 shrink-0" />
-                <input
-                  type="text"
-                  placeholder="e.g. KL-07-DR-8421"
-                  value={vehicleNumber}
-                  onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
-                  required
-                  className="w-full bg-transparent text-xs text-[#141414] placeholder:text-neutral-400 focus:outline-none uppercase"
-                />
+          <div className="p-3.5 bg-neutral-50 rounded-2xl border border-neutral-200/80 flex flex-col gap-3.5 animate-fade-in">
+            <div className="flex items-center justify-between">
+              <div className="text-[11px] font-bold text-black uppercase tracking-wider flex items-center gap-1.5">
+                <Truck className="w-3.5 h-3.5 text-black" />
+                <span>Ambulance Unit & Classification</span>
               </div>
-              {errors.vehicleNumber && (
-                <p className="mt-1 text-[10px] text-red-600">{errors.vehicleNumber}</p>
-              )}
+              <span className="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-200 text-neutral-800">
+                AIS 125 Standard
+              </span>
             </div>
 
-            {/* Unit Call Sign & Base Station (2-col grid) */}
-            <div className="grid grid-cols-2 gap-2">
+            {/* ── 1. AMBULANCE LEVEL SELECTION (A, B, C, D) ── */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-[#141414] uppercase tracking-wider">
+                    Ambulance Type / Level *
+                  </label>
+                  <p className="text-[10px] text-neutral-500">
+                    Select the national standard vehicle specification tier:
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {(Object.keys(AMBULANCE_LEVEL_CONFIGS) as AmbulanceLevel[]).map((levelKey) => {
+                  const cfg = AMBULANCE_LEVEL_CONFIGS[levelKey];
+                  const isSelected = ambulanceType === levelKey;
+
+                  return (
+                    <button
+                      key={levelKey}
+                      type="button"
+                      onClick={() => handleSelectAmbulanceLevel(levelKey)}
+                      className={`flex flex-col p-2.5 rounded-xl border text-left transition-all cursor-pointer relative ${
+                        isSelected
+                          ? `${cfg.activeBorder} shadow-sm bg-white`
+                          : "bg-white/80 border-neutral-200/80 hover:border-neutral-300 opacity-75 hover:opacity-100"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`w-5 h-5 rounded-md flex items-center justify-center font-extrabold text-[11px] shrink-0 ${
+                              isSelected
+                                ? cfg.activeBg
+                                : "bg-neutral-200 text-neutral-700"
+                            }`}
+                          >
+                            {cfg.letter}
+                          </span>
+                          <span className="text-xs font-bold text-[#141414]">
+                            Level {cfg.letter}
+                          </span>
+                        </div>
+                        <span
+                          className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${cfg.tagColor}`}
+                        >
+                          {cfg.badge}
+                        </span>
+                      </div>
+
+                      <div className="text-[10.5px] font-semibold text-neutral-700 mb-0.5">
+                        {cfg.name}
+                      </div>
+
+                      <p className="text-[9.5px] text-neutral-500 leading-tight line-clamp-2">
+                        {cfg.description}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── 2. SELECTED LEVEL SPECIFICATION & EQUIPMENT CHECKLIST ── */}
+            <div className="p-2.5 rounded-xl bg-white border border-neutral-200/90 flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className={`w-4 h-4 rounded-md flex items-center justify-center font-black text-[10px] ${selectedAmbulanceConfig.activeBg}`}
+                  >
+                    {selectedAmbulanceConfig.letter}
+                  </span>
+                  <span className="text-[11px] font-bold text-[#141414]">
+                    Level {selectedAmbulanceConfig.letter} Certified Equipment
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSelectAllEquipment}
+                  className="text-[10px] font-semibold text-neutral-600 hover:text-black underline cursor-pointer"
+                >
+                  {equipmentList.length === selectedAmbulanceConfig.defaultEquipment.length
+                    ? "Reset Standard Kit"
+                    : "Select All Kit"}
+                </button>
+              </div>
+
+              <p className="text-[10px] text-neutral-500 leading-snug">
+                <strong>Clinical Target:</strong> {selectedAmbulanceConfig.targetAcuity} &bull; <em>{selectedAmbulanceConfig.vehicleCategory}</em>
+              </p>
+
+              {/* Equipment Items Grid */}
+              <div className="grid grid-cols-1 gap-1.5 mt-0.5">
+                {selectedAmbulanceConfig.defaultEquipment.map((eq) => {
+                  const isChecked = equipmentList.includes(eq);
+                  return (
+                    <button
+                      key={eq}
+                      type="button"
+                      onClick={() => toggleEquipmentItem(eq)}
+                      className={`flex items-center gap-2 p-1.5 rounded-lg border text-left transition-all cursor-pointer ${
+                        isChecked
+                          ? "bg-neutral-50 border-neutral-300 text-black font-medium"
+                          : "bg-white border-neutral-200/60 text-neutral-400 opacity-60"
+                      }`}
+                    >
+                      <div
+                        className={`w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 border transition-all ${
+                          isChecked
+                            ? `${selectedAmbulanceConfig.activeBg} border-transparent`
+                            : "border-neutral-300 bg-neutral-100"
+                        }`}
+                      >
+                        {isChecked && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                      </div>
+                      <span className="text-[10px] leading-tight">{eq}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* ── 3. VEHICLE REGISTRATION & MODEL ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
                 <label className="block text-[11px] font-semibold text-[#141414] mb-1">
-                  Unit Call Sign
+                  Vehicle Registration No. *
                 </label>
-                <div className="relative flex items-center bg-white rounded-xl px-3 py-2.5 border border-neutral-200 focus-within:border-black">
+                <div
+                  className={`relative flex items-center bg-white rounded-xl px-3 py-2 border ${
+                    errors.vehicleNumber ? "border-red-400 bg-red-50/20" : "border-neutral-200 focus-within:border-black"
+                  }`}
+                >
+                  <Truck className="w-3.5 h-3.5 text-neutral-400 mr-2 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="e.g. KL-07-DR-8421"
+                    value={vehicleNumber}
+                    onChange={(e) => setVehicleNumber(e.target.value.toUpperCase())}
+                    required
+                    className="w-full bg-transparent text-xs text-[#141414] placeholder:text-neutral-400 focus:outline-none uppercase"
+                  />
+                </div>
+                {errors.vehicleNumber && (
+                  <p className="mt-1 text-[10px] text-red-600">{errors.vehicleNumber}</p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-semibold text-[#141414] mb-1">
+                  Vehicle Model / Chassis
+                </label>
+                <div className="relative flex items-center bg-white rounded-xl px-3 py-2 border border-neutral-200 focus-within:border-black">
                   <Shield className="w-3.5 h-3.5 text-neutral-400 mr-2 shrink-0" />
                   <input
                     type="text"
-                    placeholder="e.g. A-01"
+                    placeholder="e.g. Force Traveller / Tata Winger"
+                    value={vehicleModel}
+                    onChange={(e) => setVehicleModel(e.target.value)}
+                    className="w-full bg-transparent text-xs text-[#141414] placeholder:text-neutral-400 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ── 4. UNIT CALL SIGN & BASE STATION ── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="block text-[11px] font-semibold text-[#141414] mb-1">
+                  Unit Radio Call Sign
+                </label>
+                <div className="relative flex items-center bg-white rounded-xl px-3 py-2 border border-neutral-200 focus-within:border-black">
+                  <Radio className="w-3.5 h-3.5 text-neutral-400 mr-2 shrink-0" />
+                  <input
+                    type="text"
+                    placeholder="e.g. MEDIC-01"
                     value={callSign}
                     onChange={(e) => setCallSign(e.target.value.toUpperCase())}
                     className="w-full bg-transparent text-xs text-[#141414] placeholder:text-neutral-400 focus:outline-none uppercase"
@@ -365,18 +578,52 @@ export function RegisterForm() {
 
               <div>
                 <label className="block text-[11px] font-semibold text-[#141414] mb-1">
-                  Base Station
+                  Base Station / Operating Hub
                 </label>
-                <div className="relative flex items-center bg-white rounded-xl px-3 py-2.5 border border-neutral-200 focus-within:border-black">
+                <div className="relative flex items-center bg-white rounded-xl px-3 py-2 border border-neutral-200 focus-within:border-black">
                   <MapPin className="w-3.5 h-3.5 text-neutral-400 mr-2 shrink-0" />
                   <input
                     type="text"
-                    placeholder="e.g. MG Road, Kochi"
+                    placeholder="e.g. Fort Kochi EMS Post"
                     value={baseStation}
                     onChange={(e) => setBaseStation(e.target.value)}
                     className="w-full bg-transparent text-xs text-[#141414] placeholder:text-neutral-400 focus:outline-none"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* ── 5. BASE GPS COORDINATES (AUTO-DETECT) ── */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[11px] font-semibold text-[#141414]">
+                  Base Station GPS Coordinates (Lat / Lng)
+                </label>
+                <button
+                  type="button"
+                  onClick={handleDetectAmbCoords}
+                  disabled={detectingAmbCoords}
+                  className="text-[10px] text-neutral-600 hover:text-black font-semibold inline-flex items-center gap-1 cursor-pointer"
+                >
+                  <LocateFixed className="w-3 h-3" />
+                  <span>{detectingAmbCoords ? "Detecting..." : "Auto-Detect"}</span>
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <input
+                  type="text"
+                  placeholder="Latitude (e.g. 9.9312)"
+                  value={ambLatitude}
+                  onChange={(e) => setAmbLatitude(e.target.value)}
+                  className="bg-white rounded-xl px-3 py-2 border border-neutral-200 text-xs focus:outline-none focus:border-black"
+                />
+                <input
+                  type="text"
+                  placeholder="Longitude (e.g. 76.2673)"
+                  value={ambLongitude}
+                  onChange={(e) => setAmbLongitude(e.target.value)}
+                  className="bg-white rounded-xl px-3 py-2 border border-neutral-200 text-xs focus:outline-none focus:border-black"
+                />
               </div>
             </div>
           </div>

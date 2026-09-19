@@ -1,4 +1,5 @@
 import { IncidentSeverity } from "./incident";
+import { AmbulanceLevel } from "./ambulance";
 
 export type UserRole = "CITIZEN" | "AMBULANCE" | "HOSPITAL" | "ADMIN";
 
@@ -28,9 +29,12 @@ export interface RegisterPayload {
   role?: UserRole;
   // Ambulance specifics
   vehicleNumber?: string;
+  ambulanceType?: AmbulanceLevel;
   callSign?: string;
   baseStation?: string;
+  vehicleModel?: string;
   equipmentLevel?: string;
+  equipmentList?: string[];
   // Hospital specifics
   hospitalName?: string;
   hospitalRegistrationNumber?: string;
