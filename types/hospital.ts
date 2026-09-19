@@ -1,3 +1,5 @@
+import { IncidentSeverity } from "./incident";
+
 export type HospitalStatus = "AVAILABLE" | "BUSY" | "CRITICAL" | "FULL";
 
 export type HospitalReadinessState =
@@ -20,5 +22,7 @@ export interface Hospital {
   status: HospitalStatus;
   availableBeds: number;
   emergencyDepartmentStatus: HospitalReadinessState;
+  handledSeverities?: IncidentSeverity[];
   activeIncidentsCount?: number;
 }
+

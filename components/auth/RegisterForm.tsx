@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/AuthContext";
 import { UserRole } from "@/types/auth";
+import { IncidentSeverity } from "@/types/incident";
 import { validateEmail, validatePhone, validatePassword } from "@/lib/validation";
 import {
   User,
@@ -22,7 +23,58 @@ import {
   Shield,
   LocateFixed,
   Bed,
+  Check,
+  Activity,
+  HeartPulse,
+  AlertTriangle,
 } from "lucide-react";
+
+export const SEVERITY_CAPABILITY_OPTIONS: Array<{
+  value: IncidentSeverity;
+  label: string;
+  badge: string;
+  description: string;
+  tagColor: string;
+  activeBorder: string;
+  activeBg: string;
+}> = [
+  {
+    value: "LOW",
+    label: "Minor",
+    badge: "Minor Cases",
+    description: "Minor lacerations, first-aid, outpatient trauma",
+    tagColor: "bg-emerald-100 text-emerald-800 border-emerald-300",
+    activeBorder: "border-emerald-500 bg-emerald-50/50 ring-1 ring-emerald-500/30",
+    activeBg: "bg-emerald-600 text-white",
+  },
+  {
+    value: "MODERATE",
+    label: "Moderate",
+    badge: "Moderate Cases",
+    description: "Stable fractures, deep wounds, standard ER admissions",
+    tagColor: "bg-amber-100 text-amber-800 border-amber-300",
+    activeBorder: "border-amber-500 bg-amber-50/50 ring-1 ring-amber-500/30",
+    activeBg: "bg-amber-600 text-white",
+  },
+  {
+    value: "HIGH",
+    label: "Severe",
+    badge: "Severe Cases",
+    description: "Major collisions, serious multi-casualty trauma, emergency surgery",
+    tagColor: "bg-orange-100 text-orange-800 border-orange-300",
+    activeBorder: "border-orange-500 bg-orange-50/50 ring-1 ring-orange-500/30",
+    activeBg: "bg-orange-600 text-white",
+  },
+  {
+    value: "CRITICAL",
+    label: "Life-Threatening",
+    badge: "Life-Threatening",
+    description: "Cardiac arrest, severe hemorrhage, immediate ICU resuscitation",
+    tagColor: "bg-rose-100 text-rose-800 border-rose-300",
+    activeBorder: "border-rose-500 bg-rose-50/50 ring-1 ring-rose-500/30",
+    activeBg: "bg-rose-600 text-white",
+  },
+];
 
 export function RegisterForm() {
   const { register } = useAuth();
@@ -51,6 +103,30 @@ export function RegisterForm() {
   const [latitude, setLatitude] = useState<string>("9.9312");
   const [longitude, setLongitude] = useState<string>("76.2673");
   const [totalBeds, setTotalBeds] = useState<string>("12");
+  const [handledSeverities, setHandledSeverities] = useState<IncidentSeverity[]>([
+    "LOW",
+    "MODERATE",
+    "HIGH",
+    "CRITICAL",
+  ]);
+
+  const toggleSeverity = (sev: IncidentSeverity) => {
+    setHandledSeverities((prev) => {
+      if (prev.includes(sev)) {
+        return prev.filter((s) => s !== sev);
+      } else {
+        return [...prev, sev];
+      }
+    });
+  };
+
+  const handleSelectAllSeverities = () => {
+    if (handledSeverities.length === SEVERITY_CAPABILITY_OPTIONS.length) {
+      setHandledSeverities(["LOW"]);
+    } else {
+      setHandledSeverities(SEVERITY_CAPABILITY_OPTIONS.map((o) => o.value));
+    }
+  };
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -113,6 +189,10 @@ export function RegisterForm() {
       if (!pincode.trim()) {
         newErrors.pincode = "Postal pincode is required.";
       }
+      if (handledSeverities.length === 0) {
+        newErrors.handledSeverities =
+          "Please select at least one case severity capability your facility can handle.";
+      }
     }
 
     const passCheck = validatePassword(password);
@@ -149,6 +229,7 @@ export function RegisterForm() {
         latitude: latitude ? parseFloat(latitude) : undefined,
         longitude: longitude ? parseFloat(longitude) : undefined,
         totalBeds: totalBeds ? parseInt(totalBeds, 10) : undefined,
+        handledSeverities: role === "HOSPITAL" ? handledSeverities : undefined,
       });
     } catch (err: unknown) {
       const message =
@@ -461,6 +542,78 @@ export function RegisterForm() {
                   className="w-full bg-transparent text-xs text-[#141414] placeholder:text-neutral-400 focus:outline-none"
                 />
               </div>
+            </div>
+
+            {/* Handled Case Severity Capabilities */}
+            <div className="pt-2 border-t border-neutral-200/80">
+              <div className="flex items-center justify-between mb-1.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-[#141414] uppercase tracking-wider">
+                    Handled Case Severity *
+                  </label>
+                  <p className="text-[10px] text-neutral-500">
+                    Select case severities this facility can handle:
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSelectAllSeverities}
+                  className="text-[10px] font-semibold text-neutral-600 hover:text-black underline cursor-pointer shrink-0"
+                >
+                  {handledSeverities.length === SEVERITY_CAPABILITY_OPTIONS.length
+                    ? "Deselect Others"
+                    : "Select All (4 Levels)"}
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-1.5">
+                {SEVERITY_CAPABILITY_OPTIONS.map((opt) => {
+                  const isSelected = handledSeverities.includes(opt.value);
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => toggleSeverity(opt.value)}
+                      className={`flex items-start gap-2.5 p-2.5 rounded-xl border text-left transition-all cursor-pointer relative ${
+                        isSelected
+                          ? `${opt.activeBorder} shadow-sm`
+                          : "bg-white border-neutral-200/80 hover:border-neutral-300 opacity-70 hover:opacity-100"
+                      }`}
+                    >
+                      <div
+                        className={`w-4 h-4 rounded-md mt-0.5 flex items-center justify-center shrink-0 border transition-all ${
+                          isSelected
+                            ? `${opt.activeBg} border-transparent`
+                            : "border-neutral-300 bg-neutral-100"
+                        }`}
+                      >
+                        {isSelected && <Check className="w-2.5 h-2.5 stroke-[3]" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 mb-0.5">
+                          <span className="text-xs font-bold text-[#141414]">
+                            {opt.label}
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded border ${opt.tagColor}`}
+                          >
+                            {opt.badge}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-neutral-500 leading-tight">
+                          {opt.description}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+              {errors.handledSeverities && (
+                <p className="mt-1.5 text-[10px] text-red-600 font-medium flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.handledSeverities}
+                </p>
+              )}
             </div>
           </div>
         )}

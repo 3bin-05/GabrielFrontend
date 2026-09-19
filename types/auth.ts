@@ -1,3 +1,5 @@
+import { IncidentSeverity } from "./incident";
+
 export type UserRole = "CITIZEN" | "AMBULANCE" | "HOSPITAL" | "ADMIN";
 
 export interface User {
@@ -37,6 +39,7 @@ export interface RegisterPayload {
   latitude?: number;
   longitude?: number;
   totalBeds?: number;
+  handledSeverities?: IncidentSeverity[];
 }
 
 export interface AuthResponse {

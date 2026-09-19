@@ -63,6 +63,40 @@ export function AdminHospitalMonitor({ hospitals }: AdminHospitalMonitorProps) {
                 {h.latitude.toFixed(4)}, {h.longitude.toFixed(4)}
               </span>
             </div>
+
+            {h.handledSeverities && h.handledSeverities.length > 0 && (
+              <div className="pt-2 border-t border-[#F0F0F0]">
+                <span className="block text-[10px] font-bold uppercase tracking-wider text-[#707070] mb-1.5">
+                  Handled Severities:
+                </span>
+                <div className="flex flex-wrap gap-1">
+                  {h.handledSeverities.map((sev) => {
+                    const colorMap: Record<string, string> = {
+                      LOW: "bg-emerald-50 text-emerald-700 border-emerald-200",
+                      MODERATE: "bg-amber-50 text-amber-700 border-amber-200",
+                      HIGH: "bg-orange-50 text-orange-700 border-orange-200",
+                      CRITICAL: "bg-rose-50 text-rose-700 border-rose-200",
+                    };
+                    const labelMap: Record<string, string> = {
+                      LOW: "Minor",
+                      MODERATE: "Moderate",
+                      HIGH: "Severe",
+                      CRITICAL: "Life-Threatening",
+                    };
+                    return (
+                      <span
+                        key={sev}
+                        className={`text-[9px] font-bold px-1.5 py-0.5 rounded border ${
+                          colorMap[sev] || "bg-neutral-100 text-neutral-700 border-neutral-200"
+                        }`}
+                      >
+                        {labelMap[sev] || sev}
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         </Card>
       ))}

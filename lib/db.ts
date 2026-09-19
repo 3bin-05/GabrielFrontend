@@ -117,8 +117,12 @@ export async function initializeDatabase(): Promise<void> {
           phone VARCHAR(50) NOT NULL,
           status VARCHAR(50) NOT NULL DEFAULT 'AVAILABLE',
           available_beds INTEGER NOT NULL DEFAULT 12,
-          emergency_status VARCHAR(50) NOT NULL DEFAULT 'IDLE'
+          emergency_status VARCHAR(50) NOT NULL DEFAULT 'IDLE',
+          handled_severities TEXT[] DEFAULT '{"LOW","MODERATE","HIGH","CRITICAL"}'
         );
+
+        -- Safe column migrations for existing instances
+        ALTER TABLE hospitals ADD COLUMN IF NOT EXISTS handled_severities TEXT[] DEFAULT '{"LOW","MODERATE","HIGH","CRITICAL"}';
       `);
 
       isPgConnected = true;
@@ -185,8 +189,9 @@ export async function initializeDatabase(): Promise<void> {
           latitude: 8.9182,
           longitude: 76.6354,
           phone: "+1-555-911-0100",
-          status: "AVAILABLE",
+          status: "AVAILABLE" as HospitalStatus,
           availableBeds: 14,
+          handledSeverities: ["LOW", "MODERATE", "HIGH", "CRITICAL"] as IncidentSeverity[],
         },
         {
           id: "hosp_002",
@@ -196,8 +201,9 @@ export async function initializeDatabase(): Promise<void> {
           latitude: 8.9321,
           longitude: 76.6410,
           phone: "+1-555-911-0200",
-          status: "AVAILABLE",
+          status: "AVAILABLE" as HospitalStatus,
           availableBeds: 8,
+          handledSeverities: ["MODERATE", "HIGH", "CRITICAL"] as IncidentSeverity[],
         },
         {
           id: "hosp_003",
@@ -207,8 +213,9 @@ export async function initializeDatabase(): Promise<void> {
           latitude: 8.9054,
           longitude: 76.6190,
           phone: "+1-555-911-0300",
-          status: "AVAILABLE",
+          status: "AVAILABLE" as HospitalStatus,
           availableBeds: 5,
+          handledSeverities: ["HIGH", "CRITICAL"] as IncidentSeverity[],
         },
       ];
 
@@ -216,9 +223,9 @@ export async function initializeDatabase(): Promise<void> {
         const existing = await pg.query("SELECT id FROM hospitals WHERE id = $1", [h.id]);
         if (existing.rows.length === 0) {
           await pg.query(
-            `INSERT INTO hospitals (id, name, code, address, latitude, longitude, phone, status, available_beds)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [h.id, h.name, h.code, h.address, h.latitude, h.longitude, h.phone, h.status, h.availableBeds]
+            `INSERT INTO hospitals (id, name, code, address, latitude, longitude, phone, status, available_beds, handled_severities)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            [h.id, h.name, h.code, h.address, h.latitude, h.longitude, h.phone, h.status, h.availableBeds, h.handledSeverities]
           );
         }
       }
@@ -365,6 +372,7 @@ export async function initializeDatabase(): Promise<void> {
     status: "AVAILABLE",
     availableBeds: 14,
     emergencyDepartmentStatus: "IDLE",
+    handledSeverities: ["LOW", "MODERATE", "HIGH", "CRITICAL"],
   });
 
   globalStore.__aimless_initialized = true;
@@ -953,7 +961,7 @@ export async function getHospitals(): Promise<Hospital[]> {
   if (pg && isPgConnected) {
     try {
       const res = await pg.query(
-        `SELECT id, name, code, address, latitude, longitude, phone, status, available_beds, emergency_status
+        `SELECT id, name, code, address, latitude, longitude, phone, status, available_beds, emergency_status, handled_severities
          FROM hospitals`
       );
       return res.rows.map((r) => ({
@@ -967,6 +975,12 @@ export async function getHospitals(): Promise<Hospital[]> {
         status: r.status,
         availableBeds: r.available_beds,
         emergencyDepartmentStatus: r.emergency_status,
+        handledSeverities: (r.handled_severities as IncidentSeverity[]) || [
+          "LOW",
+          "MODERATE",
+          "HIGH",
+          "CRITICAL",
+        ],
       }));
     } catch (err) {
       console.error("[Database] PostgreSQL error fetching hospitals:", err);
@@ -982,6 +996,7 @@ export async function updateHospital(
     status?: HospitalStatus;
     availableBeds?: number;
     emergencyDepartmentStatus?: HospitalReadinessState;
+    handledSeverities?: IncidentSeverity[];
   }
 ): Promise<Hospital | null> {
   await initializeDatabase();
@@ -1003,6 +1018,10 @@ export async function updateHospital(
       if (updates.emergencyDepartmentStatus) {
         params.push(updates.emergencyDepartmentStatus);
         sets.push(`emergency_status = $${params.length}`);
+      }
+      if (updates.handledSeverities) {
+        params.push(updates.handledSeverities);
+        sets.push(`handled_severities = $${params.length}`);
       }
 
       if (sets.length > 0) {
@@ -1026,6 +1045,12 @@ export async function updateHospital(
           status: r.status,
           availableBeds: r.available_beds,
           emergencyDepartmentStatus: r.emergency_status,
+          handledSeverities: (r.handled_severities as IncidentSeverity[]) || [
+            "LOW",
+            "MODERATE",
+            "HIGH",
+            "CRITICAL",
+          ],
         };
       }
     } catch (err) {
@@ -1039,6 +1064,7 @@ export async function updateHospital(
   if (updates.availableBeds !== undefined) hosp.availableBeds = updates.availableBeds;
   if (updates.emergencyDepartmentStatus)
     hosp.emergencyDepartmentStatus = updates.emergencyDepartmentStatus;
+  if (updates.handledSeverities) hosp.handledSeverities = updates.handledSeverities;
   return hosp;
 }
 
@@ -1101,6 +1127,7 @@ export async function createHospital(data: {
   longitude?: number;
   phone?: string;
   availableBeds?: number;
+  handledSeverities?: IncidentSeverity[];
 }): Promise<Hospital> {
   await initializeDatabase();
   const id = `hosp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
@@ -1116,14 +1143,20 @@ export async function createHospital(data: {
     status: "AVAILABLE",
     availableBeds: data.availableBeds || 12,
     emergencyDepartmentStatus: "READY",
+    handledSeverities: data.handledSeverities || [
+      "LOW",
+      "MODERATE",
+      "HIGH",
+      "CRITICAL",
+    ],
   };
 
   const pg = getPool();
   if (pg && isPgConnected) {
     try {
       await pg.query(
-        `INSERT INTO hospitals (id, name, code, address, latitude, longitude, phone, status, available_beds, emergency_status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        `INSERT INTO hospitals (id, name, code, address, latitude, longitude, phone, status, available_beds, emergency_status, handled_severities)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
         [
           id,
           hospital.name,
@@ -1135,6 +1168,7 @@ export async function createHospital(data: {
           hospital.status,
           hospital.availableBeds,
           hospital.emergencyDepartmentStatus,
+          hospital.handledSeverities,
         ]
       );
     } catch (err) {

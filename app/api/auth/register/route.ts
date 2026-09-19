@@ -24,6 +24,7 @@ export async function POST(request: Request) {
       latitude,
       longitude,
       totalBeds,
+      handledSeverities,
     } = body;
 
     // Validate standard inputs
@@ -120,6 +121,10 @@ export async function POST(request: Request) {
           longitude: longitude || 76.2673,
           phone: user.phone || phone,
           availableBeds: Number(totalBeds) || 12,
+          handledSeverities:
+            Array.isArray(handledSeverities) && handledSeverities.length > 0
+              ? handledSeverities
+              : ["LOW", "MODERATE", "HIGH", "CRITICAL"],
         });
       } catch (e) {
         console.warn("[Hospital Provisioning Notice]", e);
