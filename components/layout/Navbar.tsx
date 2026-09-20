@@ -57,16 +57,16 @@ export function Navbar() {
           <nav className={`hidden md:flex items-center gap-7 text-xs font-semibold ${
             isHome ? "text-white/80" : "text-neutral-600"
           }`}>
-            <a href="#about" className={`transition-colors ${isHome ? "hover:text-white" : "hover:text-black"}`}>
+            <a href="/#about" className={`transition-colors ${isHome ? "hover:text-white" : "hover:text-black"}`}>
               About
             </a>
-            <a href="#how-it-works" className={`transition-colors ${isHome ? "hover:text-white" : "hover:text-black"}`}>
+            <a href="/#how-it-works" className={`transition-colors ${isHome ? "hover:text-white" : "hover:text-black"}`}>
               How it works
             </a>
-            <a href="#impact" className={`transition-colors ${isHome ? "hover:text-white" : "hover:text-black"}`}>
+            <a href="/#impact" className={`transition-colors ${isHome ? "hover:text-white" : "hover:text-black"}`}>
               Impact
             </a>
-            <a href="#contact" className={`transition-colors ${isHome ? "hover:text-white" : "hover:text-black"}`}>
+            <a href="/#contact" className={`transition-colors ${isHome ? "hover:text-white" : "hover:text-black"}`}>
               Contact
             </a>
           </nav>
@@ -152,28 +152,28 @@ export function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden border-b border-neutral-200 bg-white/95 backdrop-blur-md px-6 py-4 flex flex-col gap-3 animate-fade-in">
           <a
-            href="#about"
+            href="/#about"
             onClick={() => setMobileMenuOpen(false)}
             className="text-sm font-semibold text-neutral-700 py-1"
           >
             About
           </a>
           <a
-            href="#how-it-works"
+            href="/#how-it-works"
             onClick={() => setMobileMenuOpen(false)}
             className="text-sm font-semibold text-neutral-700 py-1"
           >
             How it works
           </a>
           <a
-            href="#impact"
+            href="/#impact"
             onClick={() => setMobileMenuOpen(false)}
             className="text-sm font-semibold text-neutral-700 py-1"
           >
             Impact
           </a>
           <a
-            href="#contact"
+            href="/#contact"
             onClick={() => setMobileMenuOpen(false)}
             className="text-sm font-semibold text-neutral-700 py-1"
           >

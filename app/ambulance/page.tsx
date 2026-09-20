@@ -4,7 +4,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { useAuth } from "@/lib/AuthContext";
 import { api } from "@/lib/api";
-import { useSocketEvent } from "@/lib/socket";
+import { useSocketEvent, emitSocketEvent } from "@/lib/socket";
 import { Incident, IncidentStatus } from "@/types/incident";
 import { Ambulance, AmbulanceStatus } from "@/types/ambulance";
 import { Card } from "@/components/ui/Card";
@@ -92,6 +92,54 @@ export default function AmbulanceDashboardPage() {
         i.assignedAmbulanceId === "Unit A-01 (Rapid Medic)") &&
       i.status !== "CLOSED"
   );
+
+  // Device Geolocation Watcher (Phase 8)
+  useEffect(() => {
+    if (typeof window === "undefined" || !navigator.geolocation) return;
+
+    let lastEmitTime = 0;
+    const watchId = navigator.geolocation.watchPosition(
+      (pos) => {
+        const now = Date.now();
+        const { latitude, longitude, heading, speed } = pos.coords;
+
+        // Throttle emissions to at most once per 2 seconds
+        if (now - lastEmitTime >= 2000) {
+          lastEmitTime = now;
+
+          // Emit to Socket.IO network for Python OSRM router
+          emitSocketEvent("ambulance:location_updated", {
+            ambulanceId: ambulance.id,
+            incidentId: activeMission?.id,
+            latitude,
+            longitude,
+            heading: heading || 0,
+            speed: speed ? Math.round(speed * 3.6) : 0,
+          });
+
+          // Sync database position in background
+          api.updateAmbulance(ambulance.id, {
+            latitude,
+            longitude,
+            heading: heading || 0,
+            speed: speed ? Math.round(speed * 3.6) : 0,
+          }).catch(() => {});
+        }
+      },
+      (err) => {
+        // Fallback silently if user denies browser GPS permission
+      },
+      {
+        enableHighAccuracy: true,
+        maximumAge: 3000,
+        timeout: 10000,
+      }
+    );
+
+    return () => {
+      navigator.geolocation.clearWatch(watchId);
+    };
+  }, [ambulance.id, activeMission?.id]);
 
   // Find incoming emergency (an incident waiting in REPORTED, DISPATCHING, or AMBULANCE_ASSIGNED state for this unit)
   const incomingEmergency = incidents.find(

@@ -151,7 +151,133 @@ export default function HomePage() {
       </section>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. SIMPLE STEPS / HOW GABRIEL WORKS
+          2. ABOUT GABRIEL SECTION (Linked with Navbar #about)
+      ───────────────────────────────────────────────────────────── */}
+      <section id="about" className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-16 sm:py-20 lg:py-24">
+        {/* Section Tag & Headline */}
+        <div className="max-w-3xl mb-14 sm:mb-18">
+          <div className="flex items-center gap-2.5 mb-3">
+            <span className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+            <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-[#707070]">
+              About GABRIEL &bull; The Autonomous Lifeline
+            </span>
+          </div>
+          <h2 className="text-3xl sm:text-4xl lg:text-[44px] font-extrabold text-[#111111] tracking-tight leading-[1.12] mb-5">
+            Bridging the Golden Hour with Autonomous Precision.
+          </h2>
+          <p className="text-base sm:text-lg text-neutral-600 font-normal leading-relaxed">
+            GABRIEL is a next-generation emergency response ecosystem engineered to eliminate dispatch delays, optimize road transit corridors, and synchronize emergency rooms before the ambulance even arrives.
+          </p>
+        </div>
+
+        {/* 4 Feature Pillars Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-14">
+          {/* Pillar 1: Intelligent Assignment */}
+          <div className="p-7 rounded-[26px] bg-[#F7F7F8] border border-neutral-200/80 hover:border-black/20 hover:shadow-md transition-all flex flex-col justify-between">
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-[#141414] text-white flex items-center justify-center mb-5 shadow-sm">
+                <Zap className="w-6 h-6 fill-white" />
+              </div>
+              <h3 className="text-lg font-bold text-[#141414] tracking-tight mb-2">
+                Triage-Aware Dispatch
+              </h3>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                Matches reported patient injury severity against certified ambulance capabilities (Level A–D / ALS / Mobile ICU) in under 3 seconds.
+              </p>
+            </div>
+            <div className="mt-6 pt-4 border-t border-neutral-200/60 text-[11px] font-mono font-semibold text-neutral-500">
+              01 &bull; CAPABILITY ENGINE
+            </div>
+          </div>
+
+          {/* Pillar 2: Tactical Routing */}
+          <div className="p-7 rounded-[26px] bg-[#F7F7F8] border border-neutral-200/80 hover:border-black/20 hover:shadow-md transition-all flex flex-col justify-between">
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-[#141414] text-white flex items-center justify-center mb-5 shadow-sm">
+                <Truck className="w-6 h-6 stroke-[2]" />
+              </div>
+              <h3 className="text-lg font-bold text-[#141414] tracking-tight mb-2">
+                Tactical Road Routing
+              </h3>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                Powered by OSRM road-network algorithms and Google Maps matrix grids with dynamic reroute alerts for faster transit paths.
+              </p>
+            </div>
+            <div className="mt-6 pt-4 border-t border-neutral-200/60 text-[11px] font-mono font-semibold text-neutral-500">
+              02 &bull; CORRIDOR OPTIMIZER
+            </div>
+          </div>
+
+          {/* Pillar 3: Hospital Synchronization */}
+          <div className="p-7 rounded-[26px] bg-[#F7F7F8] border border-neutral-200/80 hover:border-black/20 hover:shadow-md transition-all flex flex-col justify-between">
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-[#141414] text-white flex items-center justify-center mb-5 shadow-sm">
+                <Building2 className="w-6 h-6 stroke-[2]" />
+              </div>
+              <h3 className="text-lg font-bold text-[#141414] tracking-tight mb-2">
+                Hospital Readiness Link
+              </h3>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                Evaluates hospital trauma capabilities and active ICU bed capacity in real-time, delivering live ambulance ETA telemetry to emergency departments.
+              </p>
+            </div>
+            <div className="mt-6 pt-4 border-t border-neutral-200/60 text-[11px] font-mono font-semibold text-neutral-500">
+              03 &bull; ER READINESS SYNC
+            </div>
+          </div>
+
+          {/* Pillar 4: Real-time Telemetry */}
+          <div className="p-7 rounded-[26px] bg-[#F7F7F8] border border-neutral-200/80 hover:border-black/20 hover:shadow-md transition-all flex flex-col justify-between">
+            <div>
+              <div className="w-12 h-12 rounded-2xl bg-[#141414] text-white flex items-center justify-center mb-5 shadow-sm">
+                <Shield className="w-6 h-6 stroke-[2]" />
+              </div>
+              <h3 className="text-lg font-bold text-[#141414] tracking-tight mb-2">
+                Unified Lifeline Network
+              </h3>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                Seamless real-time Socket.IO synchronization connecting citizens, paramedic crews, and trauma physicians with zero communication friction.
+              </p>
+            </div>
+            <div className="mt-6 pt-4 border-t border-neutral-200/60 text-[11px] font-mono font-semibold text-neutral-500">
+              04 &bull; LIVE TELEMETRY
+            </div>
+          </div>
+        </div>
+
+        {/* Highlight Banner / Core Purpose */}
+        <div className="p-8 sm:p-10 rounded-[28px] bg-[#141414] text-white flex flex-col lg:flex-row lg:items-center justify-between gap-6 shadow-xl">
+          <div className="max-w-2xl">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.24em] text-neutral-400">
+              Our Mission Promise
+            </span>
+            <h4 className="text-xl sm:text-2xl font-bold text-white tracking-tight mt-1.5 mb-2">
+              Transforming fragmented emergency logistics into a cohesive, second-by-second coordinated response.
+            </h4>
+            <p className="text-xs sm:text-sm text-neutral-300 leading-relaxed">
+              Every accident reported to GABRIEL triggers an autonomous verification sequence that guides paramedic crews through the fastest road corridor directly to trauma centers verified to have open beds and the exact medical equipment required.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 shrink-0">
+            <Link
+              href="/emergency-report"
+              className="px-6 py-3.5 rounded-full bg-white text-[#141414] hover:bg-neutral-100 font-bold text-xs uppercase tracking-wider text-center transition-all shadow-md"
+            >
+              Report Emergency SOS
+            </Link>
+            <Link
+              href="/register"
+              className="px-6 py-3.5 rounded-full border border-neutral-700 hover:border-neutral-500 text-white font-bold text-xs uppercase tracking-wider text-center transition-all"
+            >
+              Join the Network
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ─────────────────────────────────────────────────────────────
+          3. SIMPLE STEPS / HOW GABRIEL WORKS
       ───────────────────────────────────────────────────────────── */}
       <section id="how-it-works" className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-14 lg:py-18">
         <div className="bg-[#F7F7F8] rounded-[28px] sm:rounded-[36px] p-8 sm:p-12 lg:p-14 border border-neutral-100">
